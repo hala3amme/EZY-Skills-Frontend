@@ -23,6 +23,8 @@ function getEnvNumber(key: string): number | undefined {
 export function getEcho(): ReverbEcho | null {
   if (echoInstance) return echoInstance;
 
+  // Must match backend REVERB_APP_KEY.
+  // Do not default this value, otherwise it's easy to silently connect to the wrong app.
   const appKey = getEnvString('VITE_REVERB_APP_KEY');
   if (!appKey) return null;
 
@@ -33,6 +35,13 @@ export function getEcho(): ReverbEcho | null {
   const wsPort = getEnvNumber('VITE_REVERB_PORT') ?? 8080;
   const scheme = (getEnvString('VITE_REVERB_SCHEME') ?? apiUrl.protocol.replace(':', '')).toLowerCase();
   const forceTLS = scheme === 'https';
+
+  const debugRealtime = getEnvString('VITE_REALTIME_DEBUG') === 'true';
+  if (debugRealtime) {
+    // Intentionally log only non-sensitive connection details.
+    // eslint-disable-next-line no-console
+    console.info('[realtime] init', { broadcaster: 'reverb', key: appKey, wsHost, wsPort, scheme, forceTLS });
+  }
 
   // Echo expects Pusher protocol client even for Reverb.
   (window as any).Pusher = Pusher;
@@ -51,19 +60,22 @@ export function getEcho(): ReverbEcho | null {
       return {
         authorize: (socketId: string, callback: (error: Error | null, data?: any) => void) => {
           const token = getAuthToken();
-          if (!token) {
-            callback(new Error('Not authenticated'));
-            return;
-          }
+
+          const headers: Record<string, string> = {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          };
+
+          // Supports Sanctum personal access tokens.
+          // If token is missing, this still allows cookie-based auth
+          // (when the backend is configured for Sanctum SPA mode).
+          if (token) headers.Authorization = `Bearer ${token}`;
 
           fetch(`${apiBaseUrl}/broadcasting/auth`, {
             method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest',
-              Authorization: `Bearer ${token}`,
-            },
+            credentials: 'include',
+            headers,
             body: JSON.stringify({
               socket_id: socketId,
               channel_name: channel.name,
@@ -85,6 +97,26 @@ export function getEcho(): ReverbEcho | null {
       };
     },
   } as any) as ReverbEcho;
+
+  if (debugRealtime) {
+    try {
+      const pusher = (echoInstance as any)?.connector?.pusher;
+      pusher?.connection?.bind?.('connected', () => {
+        // eslint-disable-next-line no-console
+        console.info('[realtime] connected', { socketId: pusher?.connection?.socket_id });
+      });
+      pusher?.connection?.bind?.('error', (err: unknown) => {
+        // eslint-disable-next-line no-console
+        console.warn('[realtime] connection error', err);
+      });
+      pusher?.connection?.bind?.('disconnected', () => {
+        // eslint-disable-next-line no-console
+        console.info('[realtime] disconnected');
+      });
+    } catch {
+      // ignore
+    }
+  }
 
   return echoInstance;
 }
