@@ -1,0 +1,384 @@
+{
+  "info": {
+    "name": "EZY Skills API",
+    "description": "Laravel REST API for EZY Skills. Set collection variables (baseUrl, token, teacherToken, courseId) before running requests. See docs/API.md for a step-by-step guide.\n\nBroadcasting:\n- Use Broadcasting → Authorize private channel to test POST /broadcasting/auth (Echo private channel auth).\n- Requires Authorization: Bearer <token>. Channel name uses private-App.Models.User.{{userId}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "description": "Create a student account. Body params: name, email, phone_number (optional), password, password_confirmation. Automatically stores the returned token into {{token}}.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.token) { pm.collectionVariables.set('token', json.token); }",
+                  "const userId = json && json.user && json.user.id;",
+                  "if (userId != null) { pm.collectionVariables.set('userId', String(userId)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Student One\",\n  \"email\": \"student1@example.com\",\n  \"phone_number\": \"+1-555-0000\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "description": "Login as a student and receive a Sanctum token. Body params: email, password, device_name (optional). Automatically stores the returned token into {{token}}.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.token) { pm.collectionVariables.set('token', json.token); }",
+                  "const userId = json && json.user && json.user.id;",
+                  "if (userId != null) { pm.collectionVariables.set('userId', String(userId)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@example.com\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (Teacher)",
+          "description": "Login as the seeded demo teacher and receive a Sanctum token. Automatically stores the returned token into {{teacherToken}}.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.token) { pm.collectionVariables.set('teacherToken', json.token); }",
+                  "const userId = json && json.user && json.user.id;",
+                  "if (userId != null) { pm.collectionVariables.set('userId', String(userId)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"teacher@example.com\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Me",
+          "description": "Get the currently authenticated user. Requires Authorization: Bearer {{token}}.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const userId = json && json.user && json.user.id;",
+                  "if (userId != null) { pm.collectionVariables.set('userId', String(userId)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "auth", "me"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "description": "Logout by revoking the current token. Requires Authorization: Bearer {{token}}.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.unset('token');",
+                  "pm.collectionVariables.unset('userId');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "auth", "logout"] }
+          }
+        },
+        {
+          "name": "Logout (Teacher)",
+          "description": "Logout by revoking the current teacher token. Requires Authorization: Bearer {{teacherToken}}.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.unset('teacherToken');",
+                  "pm.collectionVariables.unset('userId');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "List courses",
+          "description": "List courses (paginated). Optional query params: search, tag (slug or name).",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const first = json && json.data && json.data[0];",
+                  "if (first && first.id) { pm.collectionVariables.set('courseId', String(first.id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/courses?search=&tag=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "courses"],
+              "query": [
+                { "key": "search", "value": "" },
+                { "key": "tag", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Course details",
+          "description": "Public course details (video links are always locked here). Set {{courseId}} first.",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/courses/{{courseId}}", "host": ["{{baseUrl}}"], "path": ["api", "courses", "{{courseId}}"] }
+          }
+        },
+        {
+          "name": "Course content (locked/unlocked)",
+          "description": "Course content endpoint. Video links are unlocked only for the course teacher or approved students. Requires Authorization: Bearer {{token}}.",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/courses/{{courseId}}/content", "host": ["{{baseUrl}}"], "path": ["api", "courses", "{{courseId}}", "content"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enrollments",
+      "item": [
+        {
+          "name": "Request enrollment (student)",
+          "description": "Student requests enrollment for a course (no body). Requires Authorization: Bearer {{token}}. Response includes enrollment.id (use it as {{enrollmentId}}).",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const id = json && json.enrollment && json.enrollment.id;",
+                  "if (id) { pm.collectionVariables.set('enrollmentId', String(id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/courses/{{courseId}}/enroll", "host": ["{{baseUrl}}"], "path": ["api", "courses", "{{courseId}}", "enroll"] }
+          }
+        },
+        {
+          "name": "My enrollments (student)",
+          "description": "List the authenticated student's enrollments. Requires Authorization: Bearer {{token}}.",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/me/enrollments", "host": ["{{baseUrl}}"], "path": ["api", "me", "enrollments"] }
+          }
+        },
+        {
+          "name": "Teacher enrollments",
+          "description": "List enrollments for courses owned by the authenticated teacher. Requires Authorization: Bearer {{teacherToken}}. Use the returned enrollments[].id as {{enrollmentId}}.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const first = json && json.enrollments && json.enrollments[0];",
+                  "if (first && first.id) { pm.collectionVariables.set('enrollmentId', String(first.id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/teacher/enrollments?status=pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teacher", "enrollments"],
+              "query": [{ "key": "status", "value": "pending" }]
+            }
+          }
+        },
+        {
+          "name": "Approve enrollment (teacher)",
+          "description": "Approve an enrollment request. Requires Authorization: Bearer {{teacherToken}}. Set {{enrollmentId}} first.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/teacher/enrollments/{{enrollmentId}}/approve", "host": ["{{baseUrl}}"], "path": ["api", "teacher", "enrollments", "{{enrollmentId}}", "approve"] }
+          }
+        },
+        {
+          "name": "Decline enrollment (teacher)",
+          "description": "Decline an enrollment request. Requires Authorization: Bearer {{teacherToken}}. Set {{enrollmentId}} first.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/teacher/enrollments/{{enrollmentId}}/decline", "host": ["{{baseUrl}}"], "path": ["api", "teacher", "enrollments", "{{enrollmentId}}", "decline"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboards",
+      "item": [
+        {
+          "name": "Student courses",
+          "description": "List approved courses for the authenticated student. Requires Authorization: Bearer {{token}}.",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/me/courses", "host": ["{{baseUrl}}"], "path": ["api", "me", "courses"] }
+          }
+        },
+        {
+          "name": "Teacher dashboard",
+          "description": "Teacher dashboard: courses + pending enrollment request counts. Requires Authorization: Bearer {{teacherToken}}.",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/teacher/dashboard", "host": ["{{baseUrl}}"], "path": ["api", "teacher", "dashboard"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "My notifications",
+          "description": "List latest notifications for the authenticated user (up to 50). Requires Authorization. Teacher token is typically used here.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const first = json && json.notifications && json.notifications[0];",
+                  "if (first && first.id) { pm.collectionVariables.set('notificationId', String(first.id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/me/notifications", "host": ["{{baseUrl}}"], "path": ["api", "me", "notifications"] }
+          }
+        },
+        {
+          "name": "Mark notification as read",
+          "description": "Mark a notification as read. Requires Authorization. Set {{notificationId}} from the My notifications response.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/me/notifications/{{notificationId}}/read", "host": ["{{baseUrl}}"], "path": ["api", "me", "notifications", "{{notificationId}}", "read"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Broadcasting",
+      "item": [
+        {
+          "name": "Authorize private channel",
+          "description": "Authorize a private channel subscription (Echo/Pusher protocol). Requires Authorization. Uses {{userId}} to build channel_name and {{socketId}} as the socket id.",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "socket_id", "value": "{{socketId}}", "type": "text" },
+                { "key": "channel_name", "value": "private-App.Models.User.{{userId}}", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/broadcasting/auth", "host": ["{{baseUrl}}"], "path": ["broadcasting", "auth"] }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000", "description": "API base URL (no trailing slash)." },
+    { "key": "token", "value": "", "description": "Student Sanctum token. Auto-set by Auth → Login, or set manually from `php artisan ezy:dev-tokens --reset`." },
+    { "key": "teacherToken", "value": "", "description": "Teacher Sanctum token. Auto-set by Auth → Login (Teacher), or set manually from `php artisan ezy:dev-tokens --reset`." },
+    { "key": "userId", "value": "", "description": "Authenticated user id. Auto-set by Auth requests (Register/Login/Me). Used for Broadcasting channel_name." },
+    { "key": "socketId", "value": "1234.5678", "description": "Echo/Pusher socket id (example). Used by Broadcasting → Authorize private channel." },
+    { "key": "courseId", "value": "1", "description": "Course id to use in requests. Auto-set by Courses → List courses (first item), or set from `php artisan ezy:dev-tokens --reset`." },
+    { "key": "enrollmentId", "value": "", "description": "Enrollment id. Auto-set by Request enrollment (student) or Teacher enrollments (first item)." },
+    { "key": "notificationId", "value": "", "description": "Notification id. Auto-set by My notifications (first item)." }
+  ]
+}
